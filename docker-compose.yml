@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  flask-app:
+    image: shillo_image
+    ports:
+      - "5000:5000"
+    networks:
+      - loki-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    networks:
+      - loki-net
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./docker-config.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers
+    networks:
+      - loki-net
+    command: -config.file=/etc/promtail/docker-config.yaml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - loki-net
+    environment:
+      - GF_EXPLORE_ENABLED=true
+
+networks:
+  loki-net:
